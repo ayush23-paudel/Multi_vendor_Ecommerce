@@ -43,7 +43,7 @@ export const syncUserCreation = inngest.createFunction(
         async({event})=> {
             const {data}= event
             await prisma.user.delete({
-                where: {id:data.id},
+                where: {id:data.id,},
               
             })
         }
