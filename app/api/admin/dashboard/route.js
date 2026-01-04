@@ -16,7 +16,7 @@ export async function GET(request){
                 // get tt-otal orders
 
                 const orders =  await prisma.order.count()
-                const stores =  await prisma.order.count()
+                const stores =  await prisma.store.count()
 
                 // get all orders include only createdAt and total and calculate total revenue
 

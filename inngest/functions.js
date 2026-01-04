@@ -1,7 +1,7 @@
-import { step } from 'inngest';
+
 import { inngest } from './client';
 import prisma from '@/lib/prisma'
-import { setupDevBundler } from 'next/dist/server/lib/router-utils/setup-dev-bundler';
+
 // ingest funtion to save data in the database
 export const syncUserCreation = inngest.createFunction(
     {id: 'sync-user-create'},
