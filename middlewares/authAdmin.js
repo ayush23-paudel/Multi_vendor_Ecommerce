@@ -14,7 +14,7 @@
 // export default authAdmin
 
 import { currentUser } from "@clerk/nextjs/server"
-
+// this function checks whethere the currently logged user is admin or not
 const authAdmin = async (userId) => {
   try {
     if (!userId) return false
