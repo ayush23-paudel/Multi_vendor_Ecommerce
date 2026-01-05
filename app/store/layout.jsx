@@ -1,17 +1,26 @@
 import StoreLayout from "@/components/store/StoreLayout";
+import { SignIn, SignedOut, SignedIn } from "@clerk/nextjs";
 
 export const metadata = {
-    title: "GoCart. - Store Dashboard",
-    description: "GoCart. - Store Dashboard",
+    title: "HamroCart- Store Dashboard",
+    description: "HamroCart. - Store Dashboard",
 };
 
 export default function RootAdminLayout({ children }) {
 
     return (
         <>
+        <SignedIn>
             <StoreLayout>
                 {children}
             </StoreLayout>
+        </SignedIn>
+            <SignedOut>
+                <div className="min-h-screen flex items-center justify-center">
+                    <SignIn fallbackRedirectUrl="/store" routing="hash"/>
+
+                </div>
+            </SignedOut>
         </>
     );
 }

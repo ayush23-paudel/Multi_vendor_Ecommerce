@@ -31,7 +31,7 @@ export async function POST(request){
             const buffer = Buffer.from(await image.arrayBuffer());
             const response = await imagekit.upload({
                 file: buffer,
-                fileName: images.name,
+                fileName: image.name,
                 folder: "products",
                 
             })
@@ -74,7 +74,7 @@ export async function GET(request){
             return NextResponse.json({error:'not authorized'},{status:401})
         }
         const products = await prisma.product.findMany({where: {storeId}})
-        return NextRequest.json({products})
+        return NextResponse.json({products})
     } catch (error) {
         console.error(error);
          return NextResponse.json({error: error.code || error.message}, {status:400})

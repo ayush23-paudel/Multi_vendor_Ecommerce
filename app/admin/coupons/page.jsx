@@ -66,7 +66,7 @@ try {
     const confirm = window.confirm("are you sure u want to delete this coupon?")
     if(!confirm) return;
     const token = await getToken()
-      await axios.delete('/api/admin/coupon?code=${code}',{
+      await axios.delete(`/api/admin/coupon?code=${code}`,{
              headers:{Authorization:`Bearer ${token}`}
             })
             await fetchCoupons()
