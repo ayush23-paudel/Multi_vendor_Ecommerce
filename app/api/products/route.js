@@ -21,6 +21,7 @@ export async function GET(request){
         products = products.filter(product => product.store.isActive)
         return NextResponse.json({products})
     } catch (error) {
-        
+        console.error(error);
+        return NextResponse.json({error: "An internal server error occured."},{status: 500})
     }
 }
