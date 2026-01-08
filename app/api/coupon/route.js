@@ -2,20 +2,20 @@
 
 import prisma from "@/lib/prisma";
 import { getAuth } from "@clerk/nextjs/server";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 export async function POST(request) {
     try {
         const {userId, has} = getAuth(request)
         const {code} = await request.json()
-        const coupon = await prisma.coupon.findUnique({
+        const coupon = await prisma.coupon.findFirst({
             where:{code: code.toUpperCase(),
                 expiresAt: {gt: new Date()}
         
             }
         })
         if(!coupon){
-            return NextRequest.json({
+            return NextResponse.json({
                 error:"coupon not found"
             },{status:404})
         }
