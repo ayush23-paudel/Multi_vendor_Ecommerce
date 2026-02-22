@@ -1,6 +1,7 @@
 'use client'
 import ProductDescription from "@/components/ProductDescription";
 import ProductDetails from "@/components/ProductDetails";
+import Recommendations from "@/components/Recommendations";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -37,6 +38,9 @@ export default function Product() {
 
                 {/* Description & Reviews */}
                 {product && (<ProductDescription product={product} />)}
+
+                {/* Recommendations */}
+                {product && (<Recommendations productId={productId} />)}
             </div>
         </div>
     );
