@@ -4,21 +4,52 @@ import { Star } from 'lucide-react';
 import React, { useState } from 'react'
 import { XIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useDispatch } from 'react-redux';
+import { addRating } from '@/lib/features/rating/ratingSlice';
+import axios from 'axios';
 
 const RatingModal = ({ ratingModal, setRatingModal }) => {
 
     const [rating, setRating] = useState(0);
     const [review, setReview] = useState('');
+    const [loading, setLoading] = useState(false);
+    const dispatch = useDispatch();
 
     const handleSubmit = async () => {
-        if (rating < 0 || rating > 5) {
-            return toast('Please select a rating');
-        }
-        if (review.length < 5) {
-            return toast('write a short review');
-        }
+        try {
+            if (rating < 1 || rating > 5) {
+                return toast.error('Please select a rating');
+            }
+            if (review && review.length < 5) {
+                return toast.error('Write a review with at least 5 characters');
+            }
 
-        setRatingModal(null);
+            setLoading(true);
+
+            const { data } = await axios.post('/api/rating', {
+                rating,
+                review,
+                productId: ratingModal.productId,
+                orderId: ratingModal.orderId
+            });
+
+            // Dispatch action to add rating to Redux
+            dispatch(addRating({
+                rating,
+                review,
+                productId: ratingModal.productId,
+                orderId: ratingModal.orderId
+            }));
+
+            toast.success(data.message || 'Rating submitted successfully!');
+            setRatingModal(null);
+            setRating(0);
+            setReview('');
+        } catch (error) {
+            toast.error(error?.response?.data?.error || error.message || 'Failed to submit rating');
+        } finally {
+            setLoading(false);
+        }
     }
 
     return (
@@ -39,13 +70,17 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
                 </div>
                 <textarea
                     className='w-full p-2 border border-gray-300 rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-green-400'
-                    placeholder='Write your review (optional)'
+                    placeholder='Write your review (minimum 5 characters)'
                     rows='4'
                     value={review}
                     onChange={(e) => setReview(e.target.value)}
                 ></textarea>
-                <button onClick={e => toast.promise(handleSubmit(), { loading: 'Submitting...' })} className='w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition'>
-                    Submit Rating
+                <button 
+                    onClick={() => toast.promise(handleSubmit(), { loading: 'Submitting...' })}
+                    disabled={loading}
+                    className='w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition disabled:bg-gray-400'
+                >
+                    {loading ? 'Submitting...' : 'Submit Rating'}
                 </button>
             </div>
         </div>

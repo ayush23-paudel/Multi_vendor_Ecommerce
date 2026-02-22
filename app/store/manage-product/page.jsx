@@ -15,6 +15,8 @@ export default function StoreManageProducts() {
 
     const [loading, setLoading] = useState(true)
     const [products, setProducts] = useState([])
+    const [editModal, setEditModal] = useState(null)
+    const [editFormData, setEditFormData] = useState({ price: '', description: '' })
 
     const fetchProducts = async () => {
        try {
@@ -45,6 +47,50 @@ try {
 } catch (error) {
      toast.error(error?.response?.data?.error || error.message)
 }
+    }
+
+    // Open edit modal
+    const openEditModal = (product) => {
+        setEditModal(product.id)
+        setEditFormData({ price: product.price, description: product.description })
+    }
+
+    // Close edit modal
+    const closeEditModal = () => {
+        setEditModal(null)
+        setEditFormData({ price: '', description: '' })
+    }
+
+    // Handle update product
+    const handleUpdateProduct = async (productId) => {
+        try {
+            if (!editFormData.price && !editFormData.description) {
+                toast.error('Please enter price or description to update')
+                return
+            }
+
+            const token = await getToken()
+            const formData = new FormData()
+            formData.append('productId', productId)
+            if (editFormData.price) formData.append('price', editFormData.price)
+            if (editFormData.description) formData.append('description', editFormData.description)
+
+            const { data } = await axios.put('/api/store/product', formData, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+
+            setProducts(prevProducts =>
+                prevProducts.map(product =>
+                    product.id === productId
+                        ? { ...product, price: editFormData.price || product.price, description: editFormData.description || product.description }
+                        : product
+                )
+            )
+            toast.success(data.message)
+            closeEditModal()
+        } catch (error) {
+            toast.error(error?.response?.data?.error || error.message)
+        }
     }
     useEffect(() => {
 
@@ -86,11 +132,60 @@ try {
                                     <div className="w-9 h-5 bg-slate-300 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200"></div>
                                     <span className="dot absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
                                 </label>
+                                <button onClick={() => openEditModal(product)} className="ml-3 px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600">
+                                    Edit
+                                </button>
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
-        </>
-    )
+            
+
+            {/* Edit Modal */}
+            {editModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-96 max-w-full">
+                        <h2 className="text-xl font-semibold mb-4">Edit Product</h2>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={editFormData.price}
+                                    onChange={(e) => setEditFormData({ ...editFormData, price: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Enter new price"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                <textarea
+                                    value={editFormData.description}
+                                    onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Enter new description"
+                                    rows="4"
+                                />
+                            </div>
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    onClick={() => handleUpdateProduct(editModal)}
+                                    className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                                >
+                                    Update
+                                </button>
+                                <button
+                                    onClick={closeEditModal}
+                                    className="flex-1 px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            </>)
 }

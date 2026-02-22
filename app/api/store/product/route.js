@@ -80,3 +80,46 @@ export async function GET(request){
          return NextResponse.json({error: error.code || error.message}, {status:400})
     }
 }
+
+// update product (price, description)
+
+export async function PUT(request){
+    try {
+        const{userId} = getAuth(request)
+       
+        const storeId = await authSeller(userId)
+        if(!storeId){
+            return NextResponse.json({error:'not authorized'},{status:401})
+        }
+
+        const formData = await request.formData()
+        const productId = formData.get("productId")
+        const price = formData.get("price") ? Number(formData.get("price")) : undefined
+        const description = formData.get("description")
+
+        if(!productId){
+            return NextResponse.json({error:'missing productId'},{status:400})
+        }
+
+        // verify product belongs to seller
+        const product = await prisma.product.findUnique({where: {id: productId}})
+        if(!product || product.storeId !== storeId){
+            return NextResponse.json({error:'not authorized'},{status:401})
+        }
+
+        // update product
+        const updateData = {}
+        if(price !== undefined) updateData.price = price
+        if(description) updateData.description = description
+
+        await prisma.product.update({
+            where: {id: productId},
+            data: updateData
+        })
+
+        return NextResponse.json({message:"Product updated successfully"})
+    } catch (error) {
+        console.error(error);
+         return NextResponse.json({error: error.code || error.message}, {status:400})
+    }
+}
