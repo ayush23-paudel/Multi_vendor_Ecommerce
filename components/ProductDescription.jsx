@@ -3,6 +3,7 @@ import { ArrowRight, StarIcon } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useState } from "react"
+import Questions from "./Questions"
 
 const ProductDescription = ({ product }) => {
 
@@ -13,7 +14,7 @@ const ProductDescription = ({ product }) => {
 
             {/* Tabs */}
             <div className="flex border-b border-slate-200 mb-6 max-w-2xl">
-                {['Description', 'Reviews'].map((tab, index) => (
+                {['Description', 'Reviews', 'Questions'].map((tab, index) => (
                     <button className={`${tab === selectedTab ? 'border-b-[1.5px] font-semibold' : 'text-slate-400'} px-3 py-2 font-medium`} key={index} onClick={() => setSelectedTab(tab)}>
                         {tab}
                     </button>
@@ -44,6 +45,11 @@ const ProductDescription = ({ product }) => {
                         </div>
                     ))}
                 </div>
+            )}
+
+            {/* Questions */}
+            {selectedTab === "Questions" && (
+                <Questions productId={product.id} />
             )}
 
             {/* Store Page */}
