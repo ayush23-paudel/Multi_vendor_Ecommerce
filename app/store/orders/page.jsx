@@ -1,7 +1,6 @@
 'use client'
 import { useEffect, useState } from "react"
 import Loading from "@/components/Loading"
-import { orderDummyData } from "@/assets/assets"
 import { useAuth } from "@clerk/clerk-react"
 import axios from "axios"
 import toast from "react-hot-toast"
