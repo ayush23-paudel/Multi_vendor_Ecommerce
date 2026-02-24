@@ -54,10 +54,11 @@ enum OrderStatus {
 }
 
 enum PaymentMethod {
-    COD
-    STRIPE
+  COD
+  STRIPE
+  ESEWA
+  KHALTI
 }
-
 // Required for creating an Order: total, userId, storeId, addressId, isPaid, paymentMethod, isCouponUsed, coupon (JSON), orderItems (nested)
 model Order {
     id            String        @id @default(cuid())

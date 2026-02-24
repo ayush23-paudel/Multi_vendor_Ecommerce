@@ -107,7 +107,7 @@ await prisma.user.update({
     data: {cart: {}}
 })
 
-return NextResponse.json({message:'Orders placed successfully'})
+return NextResponse.json({message:'Orders placed successfully', orderIds})
 
     } catch (error) {
         console.error(error)
@@ -124,7 +124,8 @@ export async function GET(request){
         const orders = await prisma.order.findMany({
             where: {userId,OR: [
                 {paymentMethod: PaymentMethod.COD},
-                {AND: [{paymentMethod: PaymentMethod.STRIPE},{isPaid: true}]}
+                {AND: [{paymentMethod: PaymentMethod.STRIPE},{isPaid: true}]},
+                {AND: [{paymentMethod: PaymentMethod.ESEWA},{isPaid: true}]}
             ]},
             include: {
                 orderItems: {include: {product: true}},

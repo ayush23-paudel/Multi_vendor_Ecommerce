@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Protect, useAuth, useUser } from '@clerk/nextjs';
 import axios from 'axios';
 import { fetchCart } from '@/lib/features/cart/cartSlice';
+import { convertUSDToNPR } from '@/lib/currency';
 
 const OrderSummary = ({ totalPrice, items }) => {
 const {user} = useUser()
@@ -23,6 +24,7 @@ const dispatch = useDispatch()
     const [showAddressModal, setShowAddressModal] = useState(false);
     const [couponCodeInput, setCouponCodeInput] = useState('');
     const [coupon, setCoupon] = useState('');
+    const [khaltiLoading, setKhaltiLoading] = useState(false);
 
     const handleCouponCode = async (event) => {
         event.preventDefault();
@@ -64,8 +66,38 @@ try {
            const {data}= await axios.post('/api/orders',orderData,{
             headers:{Authorization:` Bearer ${token}`}
            })
-           if(paymentMethod ==='STRIPE'){
-            window.location.href = data.session.url;
+
+                     if(paymentMethod === 'STRIPE'){
+                        // server should return { session: { url } } when creating a Stripe Checkout session
+                        if(data && data.session && data.session.url){
+                            window.location.href = data.session.url
+                        } else {
+                            console.error('Stripe session not available', data)
+                            toast.error('Stripe session was not created. Check server logs.')
+                        }
+                                         } else if(paymentMethod === 'KHALTI'){
+                        // Khalti payment
+                        try {
+                            setKhaltiLoading(true)
+                            const finalTotal = coupon ? (totalPrice + 5 - (coupon.discount / 100 * totalPrice)).toFixed(2) : (totalPrice + 5).toFixed(2)
+                            const { data: khaltiData } = await axios.post('/api/payment/khalti/initiate', {
+                                orderIds: data.orderIds,
+                                totalAmountUSD: parseFloat(finalTotal)
+                            }, {
+                                headers: { Authorization: `Bearer ${token}` }
+                            })
+
+                            if(!khaltiData || !khaltiData.payment_url){
+                                throw new Error('Khalti initiation failed. Please check your credentials or test environment.')
+                            }
+
+                            // redirect securely to Khalti payment portal
+                            window.location.href = khaltiData.payment_url
+                        } catch (error) {
+                            console.error('Khalti error:', error)
+                            toast.error(error?.response?.data?.error || error.message || 'Khalti payment failed')
+                            setKhaltiLoading(false)
+                        }
            }else{
             toast.success(data.message)
              router.push('/orders')
@@ -89,6 +121,13 @@ try {
             <div className='flex gap-2 items-center mt-1'>
                 <input type="radio" id="STRIPE" name='payment' onChange={() => setPaymentMethod('STRIPE')} checked={paymentMethod === 'STRIPE'} className='accent-gray-500' />
                 <label htmlFor="STRIPE" className='cursor-pointer'>Stripe Payment</label>
+            </div>
+            <div className='flex gap-2 items-center mt-1'>
+                <input type="radio" id="KHALTI" name='payment' onChange={() => setPaymentMethod('KHALTI')} checked={paymentMethod === 'KHALTI'} className='accent-gray-500' />
+                <label htmlFor="KHALTI" className='cursor-pointer flex items-center gap-2'>
+                    Khalti Payment 
+                    <span className='text-xs text-green-600 font-medium'>(NPR)</span>
+                </label>
             </div>
             <div className='my-4 py-4 border-y border-slate-200 text-slate-400'>
                 <p>Address</p>
@@ -148,11 +187,19 @@ try {
             <div className='flex justify-between py-4'>
                 <p>Total:</p>
                 <p className='font-medium text-right'>
-                    <Protect plan={'plus'} fallback={`${currency}${coupon ? (totalPrice + 5 - (coupon.discount / 100 * totalPrice)).toFixed(2) : (totalPrice + 5).toLocaleString()}`}>
-                    {currency}{coupon ? (totalPrice  - (coupon.discount / 100 * totalPrice)).toFixed(2) : totalPrice.toLocaleString()}
-                    </Protect></p>
+                    {paymentMethod === 'KHALTI' ? (
+                        <span>
+                            Rs {convertUSDToNPR(coupon ? (totalPrice + 5 - (coupon.discount / 100 * totalPrice)).toFixed(2) : (totalPrice + 5)).toLocaleString()}
+                            <span className='text-xs text-gray-500 block'>({currency}{coupon ? (totalPrice + 5 - (coupon.discount / 100 * totalPrice)).toFixed(2) : (totalPrice + 5).toLocaleString()})</span>
+                        </span>
+                    ) : (
+                        <Protect plan={'plus'} fallback={`${currency}${coupon ? (totalPrice + 5 - (coupon.discount / 100 * totalPrice)).toFixed(2) : (totalPrice + 5).toLocaleString()}`}>
+                        {currency}{coupon ? (totalPrice  - (coupon.discount / 100 * totalPrice)).toFixed(2) : totalPrice.toLocaleString()}
+                        </Protect>
+                    )}
+                </p>
             </div>
-            <button onClick={e => toast.promise(handlePlaceOrder(e), { loading: 'placing Order...' })} className='w-full bg-slate-700 text-white py-2.5 rounded hover:bg-slate-900 active:scale-95 transition-all'>Place Order</button>
+            <button disabled={khaltiLoading} onClick={e => toast.promise(handlePlaceOrder(e), { loading: 'placing Order...' })} className='w-full bg-slate-700 text-white py-2.5 rounded hover:bg-slate-900 active:scale-95 transition-all disabled:bg-gray-400'>{khaltiLoading ? 'Processing...' : 'Place Order'}</button>
 
             {showAddressModal && <AddressModal setShowAddressModal={setShowAddressModal} />}
 
