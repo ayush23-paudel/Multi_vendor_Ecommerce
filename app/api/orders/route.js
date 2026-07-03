@@ -163,8 +163,10 @@ export async function GET(request) {
                 userId, OR: [
                     { paymentMethod: PaymentMethod.COD },
                     { AND: [{ paymentMethod: PaymentMethod.STRIPE }, { isPaid: true }] },
-                    { AND: [{ paymentMethod: PaymentMethod.ESEWA }, { isPaid: true }] }
+                    { AND: [{ paymentMethod: PaymentMethod.ESEWA }, { isPaid: true }] },
+                     { AND: [{ paymentMethod: PaymentMethod.KHALTI }, { isPaid: true }] }
                 ]
+                
             },
             include: {
                 orderItems: { include: { product: true } },
