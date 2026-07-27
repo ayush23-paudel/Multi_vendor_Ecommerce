@@ -15,21 +15,48 @@ export async function POST(request){
         }
 
         const {coupon} = await request.json()
+        if (!coupon || !coupon.code || !coupon.discount || !coupon.expiresAt) {
+            return NextResponse.json({error: "Missing required coupon details"}, {status: 400})
+        }
+
         coupon.code = coupon.code.toUpperCase()
-        await prisma.coupon.create({data: coupon}).then(async(coupon)=>{
-            // run inngest sheduler function to delete coupon on expire
+        
+        // Parse and validate date
+        const expiresAt = new Date(coupon.expiresAt)
+        if (isNaN(expiresAt.getTime())) {
+            return NextResponse.json({error: "Invalid expiration date"}, {status: 400})
+        }
+
+        if (expiresAt <= new Date()) {
+            return NextResponse.json({error: "Expiration date must be in the future"}, {status: 400})
+        }
+
+        coupon.expiresAt = expiresAt
+        coupon.discount = Number(coupon.discount)
+
+        // Create coupon in database
+        const createdCoupon = await prisma.coupon.create({ data: coupon })
+
+        // Safely send event to Inngest to delete coupon on expire
+        try {
             await inngest.send({
                 name: "app/coupon.expired",
                 data:{
-                    code:coupon.code,
-                    expires_at: coupon.expiresAt,
-
+                    code: createdCoupon.code,
+                    expires_at: createdCoupon.expiresAt,
                 }
             })
-        })
+        } catch (inngestError) {
+            console.error("Inngest send event failed:", inngestError)
+            // Do not fail the request; the database record is already successfully created.
+        }
+
         return NextResponse.json({message:"coupon added successfully"})
     } catch (error) {
         console.error(error)
+        if (error.code === 'P2002') {
+            return NextResponse.json({error: "A coupon with this code already exists"}, {status: 400})
+        }
         return NextResponse.json({error: error.code || error.message},{status:400})
     }
 }

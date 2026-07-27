@@ -13,6 +13,12 @@ export default function AdminCoupons() {
 
     const [coupons, setCoupons] = useState([])
 
+    const getDefaultExpiryDate = () => {
+        const date = new Date()
+        date.setDate(date.getDate() + 7)
+        return date
+    }
+
     const [newCoupon, setNewCoupon] = useState({
         code: '',
         description: '',
@@ -20,7 +26,7 @@ export default function AdminCoupons() {
         forNewUser: false,
         forMember: false,
         isPublic: false,
-        expiresAt: new Date()
+        expiresAt: getDefaultExpiryDate()
     })
 
     const fetchCoupons = async () => {
@@ -41,12 +47,33 @@ export default function AdminCoupons() {
         e.preventDefault()
         try {
             const token = await getToken()
-            newCoupon.discount = Number(newCoupon.discount)
-            newCoupon.expiresAt= new Date(newCoupon.expiresAt)
-            const {data} = await axios.post('/api/admin/coupon',{coupon:newCoupon},{
+
+            // Prepare the payload without mutating the component state directly
+            const expiryDate = new Date(newCoupon.expiresAt)
+            // Set expiration to 23:59:59.999 on the selected date to prevent timezone/same-day issues
+            expiryDate.setHours(23, 59, 59, 999)
+
+            const couponPayload = {
+                ...newCoupon,
+                discount: Number(newCoupon.discount),
+                expiresAt: expiryDate
+            }
+
+            const {data} = await axios.post('/api/admin/coupon',{coupon:couponPayload},{
              headers:{Authorization:`Bearer ${token}`}
             })
             toast.success(data.message)
+
+            // Reset the newCoupon state back to default
+            setNewCoupon({
+                code: '',
+                description: '',
+                discount: '',
+                forNewUser: false,
+                forMember: false,
+                isPublic: false,
+                expiresAt: getDefaultExpiryDate()
+            })
 
             await fetchCoupons()
         } catch (error) {
