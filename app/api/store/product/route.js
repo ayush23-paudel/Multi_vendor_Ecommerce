@@ -13,8 +13,6 @@ export async function POST(request){
         if(!storeId){
             return NextResponse.json({error:'not authorized'},{status:401})
         }
-        //get the data from the form
-
         const formData = await request.formData()
         const name= formData.get("name")
         const description= formData.get("description")
@@ -24,6 +22,25 @@ export async function POST(request){
         const images= formData.getAll("images")
         if (!name || !description || !mrp || !price || !category || images.length<1){
  return NextResponse.json({error:'missing product details'},{status:401})
+        }
+
+        // Check if product already exists with the same name, category, and storeId
+        const existingProduct = await prisma.product.findFirst({
+            where: {
+                name: {
+                    equals: name,
+                    mode: 'insensitive'
+                },
+                category,
+                storeId
+            }
+        })
+
+        if (existingProduct) {
+            const errorMessage = existingProduct.inStock
+                ? 'Product with this name and category already exists in your store.'
+                : 'Product with this name and category already exists in your store but is currently marked as out of stock. Please activate it under the Manage Products tab.';
+            return NextResponse.json({error: errorMessage}, {status: 400})
         }
 
         // uploading images to imagekit
