@@ -1,12 +1,12 @@
 'use client'
 
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import { useAuth } from '@clerk/nextjs'
 
-export default function StripeVerifyPage() {
+function StripeVerifyContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const sessionId = searchParams.get('session_id')
@@ -38,7 +38,6 @@ export default function StripeVerifyPage() {
                     setStatus('Payment verified successfully. Redirecting...')
                     setTimeout(() => {
                         router.push('/orders')
-                        // might want to trigger a cart refetch here or let the orders page do it
                     }, 2000)
                 } else {
                     toast.error('Payment verification failed.')
@@ -61,5 +60,18 @@ export default function StripeVerifyPage() {
             <h1 className="text-2xl font-semibold mb-4 text-slate-700">Stripe Payment Verification</h1>
             <p className="text-slate-500">{status}</p>
         </div>
+    )
+}
+
+export default function StripeVerifyPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-[50vh] flex flex-col items-center justify-center p-6">
+                <h1 className="text-2xl font-semibold mb-4 text-slate-700">Stripe Payment Verification</h1>
+                <p className="text-slate-500">Loading payment verification...</p>
+            </div>
+        }>
+            <StripeVerifyContent />
+        </Suspense>
     )
 }

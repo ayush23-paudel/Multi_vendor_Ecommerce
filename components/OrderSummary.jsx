@@ -43,6 +43,8 @@ const dispatch = useDispatch()
         }
     }
 
+    const hasStockIssue = items.some(item => !item.inStock || item.stock === 0 || item.stock < item.quantity);
+
     const handlePlaceOrder = async (e) => {
         e.preventDefault();
 try {
@@ -51,6 +53,9 @@ try {
           }
           if(!selectedAddress){
             return toast('Please select an address')
+          }
+          if (hasStockIssue) {
+              return toast.error('Please resolve stock issues in your cart first.')
           }
            const token = await getToken();
            const orderData = {
@@ -199,7 +204,13 @@ try {
                     )}
                 </p>
             </div>
-            <button disabled={khaltiLoading} onClick={e => toast.promise(handlePlaceOrder(e), { loading: 'placing Order...' })} className='w-full bg-slate-700 text-white py-2.5 rounded hover:bg-slate-900 active:scale-95 transition-all disabled:bg-gray-400'>{khaltiLoading ? 'Processing...' : 'Place Order'}</button>
+            <button 
+                disabled={khaltiLoading || hasStockIssue} 
+                onClick={e => toast.promise(handlePlaceOrder(e), { loading: 'placing Order...' })} 
+                className='w-full bg-slate-700 text-white py-2.5 rounded hover:bg-slate-900 active:scale-95 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed'
+            >
+                {khaltiLoading ? 'Processing...' : hasStockIssue ? 'Fix Stock Issues' : 'Place Order'}
+            </button>
 
             {showAddressModal && <AddressModal setShowAddressModal={setShowAddressModal} />}
 

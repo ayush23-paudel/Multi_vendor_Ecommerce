@@ -16,7 +16,7 @@ export default function StoreManageProducts() {
     const [loading, setLoading] = useState(true)
     const [products, setProducts] = useState([])
     const [editModal, setEditModal] = useState(null)
-    const [editFormData, setEditFormData] = useState({ price: '', description: '' })
+    const [editFormData, setEditFormData] = useState({ price: '', description: '', stock: '' })
 
     const fetchProducts = async () => {
        try {
@@ -52,39 +52,48 @@ try {
     // Open edit modal
     const openEditModal = (product) => {
         setEditModal(product.id)
-        setEditFormData({ price: product.price, description: product.description })
+        setEditFormData({ price: product.price, description: product.description, stock: product.stock })
     }
 
     // Close edit modal
     const closeEditModal = () => {
         setEditModal(null)
-        setEditFormData({ price: '', description: '' })
+        setEditFormData({ price: '', description: '', stock: '' })
     }
 
     // Handle update product
     const handleUpdateProduct = async (productId) => {
         try {
-            if (!editFormData.price && !editFormData.description) {
-                toast.error('Please enter price or description to update')
+            if (editFormData.price === '' && editFormData.description === '' && editFormData.stock === '') {
+                toast.error('Please enter price, description, or stock to update')
                 return
             }
 
             const token = await getToken()
             const formData = new FormData()
             formData.append('productId', productId)
-            if (editFormData.price) formData.append('price', editFormData.price)
-            if (editFormData.description) formData.append('description', editFormData.description)
+            if (editFormData.price !== '') formData.append('price', editFormData.price)
+            if (editFormData.description !== '') formData.append('description', editFormData.description)
+            if (editFormData.stock !== '') formData.append('stock', editFormData.stock)
 
             const { data } = await axios.put('/api/store/product', formData, {
                 headers: { Authorization: `Bearer ${token}` }
             })
 
             setProducts(prevProducts =>
-                prevProducts.map(product =>
-                    product.id === productId
-                        ? { ...product, price: editFormData.price || product.price, description: editFormData.description || product.description }
-                        : product
-                )
+                prevProducts.map(product => {
+                    if (product.id === productId) {
+                        const updatedStock = editFormData.stock !== '' ? Number(editFormData.stock) : product.stock;
+                        return {
+                            ...product,
+                            price: editFormData.price !== '' ? Number(editFormData.price) : product.price,
+                            description: editFormData.description !== '' ? editFormData.description : product.description,
+                            stock: updatedStock,
+                            inStock: updatedStock > 0
+                        };
+                    }
+                    return product;
+                })
             )
             toast.success(data.message)
             closeEditModal()
@@ -111,6 +120,7 @@ try {
                         <th className="px-4 py-3 hidden md:table-cell">Description</th>
                         <th className="px-4 py-3 hidden md:table-cell">MRP</th>
                         <th className="px-4 py-3">Price</th>
+                        <th className="px-4 py-3">Stock</th>
                         <th className="px-4 py-3">Actions</th>
                     </tr>
                 </thead>
@@ -126,6 +136,7 @@ try {
                             <td className="px-4 py-3 max-w-md text-slate-600 hidden md:table-cell truncate">{product.description}</td>
                             <td className="px-4 py-3 hidden md:table-cell">{currency} {product.mrp.toLocaleString()}</td>
                             <td className="px-4 py-3">{currency} {product.price.toLocaleString()}</td>
+                            <td className="px-4 py-3">{product.stock}</td>
                             <td className="px-4 py-3 text-center">
                                 <label className="relative inline-flex items-center cursor-pointer text-gray-900 gap-3">
                                     <input type="checkbox" className="sr-only peer" onChange={() => toast.promise(toggleStock(product.id), { loading: "Updating data..." })} checked={product.inStock} />
@@ -157,6 +168,16 @@ try {
                                     onChange={(e) => setEditFormData({ ...editFormData, price: e.target.value })}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="Enter new price"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+                                <input
+                                    type="number"
+                                    value={editFormData.stock}
+                                    onChange={(e) => setEditFormData({ ...editFormData, stock: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Enter new stock quantity"
                                 />
                             </div>
                             <div>

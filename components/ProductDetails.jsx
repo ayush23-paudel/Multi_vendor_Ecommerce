@@ -56,6 +56,17 @@ const ProductDetails = ({ product }) => {
                     <TagIcon size={14} />
                     <p>Save {((product.mrp - product.price) / product.mrp * 100).toFixed(0)}% right now</p>
                 </div>
+                {/* Stock Indicator */}
+                <div className="mt-4">
+                    {product.stock === 0 || !product.inStock ? (
+                        <p className="text-sm font-medium text-red-600">Out of Stock</p>
+                    ) : product.stock <= 5 ? (
+                        <p className="text-sm font-medium text-amber-600">Only {product.stock} left in stock - order soon!</p>
+                    ) : (
+                        <p className="text-sm font-medium text-green-600 font-semibold">In Stock ({product.stock} available)</p>
+                    )}
+                </div>
+
                 <div className="flex items-end gap-5 mt-10">
                     {
                         cart[productId] && (
@@ -65,8 +76,17 @@ const ProductDetails = ({ product }) => {
                             </div>
                         )
                     }
-                    <button onClick={() => !cart[productId] ? addToCartHandler() : router.push('/cart')} className="bg-slate-800 text-white px-10 py-3 text-sm font-medium rounded hover:bg-slate-900 active:scale-95 transition">
-                        {!cart[productId] ? 'Add to Cart' : 'View Cart'}
+                    <button 
+                        disabled={(product.stock === 0 || !product.inStock) && !cart[productId]}
+                        onClick={() => !cart[productId] ? addToCartHandler() : router.push('/cart')} 
+                        className="bg-slate-800 text-white px-10 py-3 text-sm font-medium rounded hover:bg-slate-900 active:scale-95 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                        {(product.stock === 0 || !product.inStock) && !cart[productId]
+                            ? 'Out of Stock' 
+                            : !cart[productId] 
+                                ? 'Add to Cart' 
+                                : 'View Cart'
+                        }
                     </button>
                 </div>
                 <hr className="border-gray-300 my-5" />

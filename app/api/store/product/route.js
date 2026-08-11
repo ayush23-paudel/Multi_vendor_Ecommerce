@@ -19,6 +19,7 @@ export async function POST(request){
         const mrp= Number(formData.get("mrp"))
         const price= Number(formData.get("price"))
         const category= formData.get("category")
+        const stock= Number(formData.get("stock") || 0)
         const images= formData.getAll("images")
         if (!name || !description || !mrp || !price || !category || images.length<1){
  return NextResponse.json({error:'missing product details'},{status:401})
@@ -69,6 +70,8 @@ return url
                 mrp,
                 price,
                 category,
+                stock,
+                inStock: stock > 0,
                 images: imagesUrl,
                 storeId
             }
@@ -113,6 +116,7 @@ export async function PUT(request){
         const productId = formData.get("productId")
         const price = formData.get("price") ? Number(formData.get("price")) : undefined
         const description = formData.get("description")
+        const stock = formData.get("stock") !== null && formData.get("stock") !== undefined ? Number(formData.get("stock")) : undefined
 
         if(!productId){
             return NextResponse.json({error:'missing productId'},{status:400})
@@ -128,6 +132,10 @@ export async function PUT(request){
         const updateData = {}
         if(price !== undefined) updateData.price = price
         if(description) updateData.description = description
+        if(stock !== undefined) {
+            updateData.stock = stock
+            updateData.inStock = stock > 0
+        }
 
         await prisma.product.update({
             where: {id: productId},

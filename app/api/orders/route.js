@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { getAuth } from "@clerk/nextjs/server";
 import { PaymentMethod } from "@prisma/client";
+import { inngest } from "@/inngest/client";
 
 import { NextResponse } from "next/server";
 
@@ -55,6 +56,12 @@ export async function POST(request) {
             const product = await prisma.product.findUnique({
                 where: { id: item.id }
             })
+            if (!product) {
+                return NextResponse.json({ error: `Product not found.` }, { status: 404 })
+            }
+            if (!product.inStock || product.stock < item.quantity) {
+                return NextResponse.json({ error: `Product "${product.name}" is out of stock or does not have enough stock available.` }, { status: 400 })
+            }
             const storeId = product.storeId
             if (!ordersByStore.has(storeId)) {
                 ordersByStore.set(storeId, [])
@@ -101,6 +108,35 @@ export async function POST(request) {
             orderIds.push(order.id)
         }
 
+        // decrement stock immediately for all orders (COD and Online payment reservations)
+        for (const item of items) {
+            const product = await prisma.product.findUnique({
+                where: { id: item.id }
+            })
+            if (product) {
+                const newStock = Math.max(0, product.stock - item.quantity);
+                await prisma.product.update({
+                    where: { id: product.id },
+                    data: {
+                        stock: newStock,
+                        inStock: newStock > 0
+                    }
+                })
+            }
+        }
+
+        // Send payment timeout event for online payment methods (Stripe, Khalti)
+        if (paymentMethod !== 'COD') {
+            try {
+                await inngest.send({
+                    name: 'order/payment.timeout',
+                    data: { orderIds }
+                })
+            } catch (inngestError) {
+                console.error("Inngest order timeout event failed:", inngestError)
+            }
+        }
+
         // clear the cart 
         await prisma.user.update({
             where: { id: userId },
@@ -118,6 +154,7 @@ export async function POST(request) {
             try {
                 const session = await stripe.checkout.sessions.create({
                     payment_method_types: ['card'],
+                    expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // expire in 30 mins (minimum supported by Stripe)
                     line_items: [
                         {
                             price_data: {

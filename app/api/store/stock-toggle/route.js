@@ -24,6 +24,13 @@ export async function POST(request){
         if (!product){
              return NextResponse.json ({error: "no product found "},{status: 404})
         }
+
+        // If toggling from out-of-stock (inStock: false) to in-stock (inStock: true)
+        // verify that the product actually has positive stock.
+        if (!product.inStock && product.stock <= 0) {
+            return NextResponse.json({ error: "Cannot mark product as In Stock because the stock quantity is 0. Please update the stock quantity instead." }, { status: 400 })
+        }
+
         await prisma.product.update({
             where: {id: productId},
             data: {inStock: !product.inStock}

@@ -2,27 +2,47 @@
 import ProductDescription from "@/components/ProductDescription";
 import ProductDetails from "@/components/ProductDetails";
 import Recommendations from "@/components/Recommendations";
+import Loading from "@/components/Loading";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import axios from "axios";
 
 export default function Product() {
 
     const { productId } = useParams();
-    const [product, setProduct] = useState();
-    const products = useSelector(state => state.product.list);
+    const [product, setProduct] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     const fetchProduct = async () => {
-        const product = products.find((product) => product.id === productId);
-        setProduct(product);
+        try {
+            setLoading(true);
+            const { data } = await axios.get(`/api/products/${productId}`);
+            setProduct(data.product);
+        } catch (error) {
+            console.error("Error fetching product details:", error);
+        } finally {
+            setLoading(false);
+        }
     }
 
     useEffect(() => {
-        if (products.length > 0) {
-            fetchProduct()
+        if (productId) {
+            fetchProduct();
         }
-        scrollTo(0, 0)
-    }, [productId,products]);
+        scrollTo(0, 0);
+    }, [productId]);
+
+    if (loading) {
+        return <Loading />;
+    }
+
+    if (!product) {
+        return (
+            <div className="min-h-[60vh] flex items-center justify-center text-slate-400">
+                <h1 className="text-2xl font-semibold">Product not found</h1>
+            </div>
+        );
+    }
 
     return (
         <div className="mx-6">
@@ -34,13 +54,13 @@ export default function Product() {
                 </div>
 
                 {/* Product Details */}
-                {product && (<ProductDetails product={product} />)}
+                <ProductDetails product={product} />
 
                 {/* Description & Reviews */}
-                {product && (<ProductDescription product={product} />)}
+                <ProductDescription product={product} />
 
                 {/* Recommendations */}
-                {product && (<Recommendations productId={productId} />)}
+                <Recommendations productId={productId} />
             </div>
         </div>
     );

@@ -17,6 +17,7 @@ export default function StoreAddProduct() {
         mrp: 0,
         price: 0,
         category: "",
+        stock: 0,
     })
     const [loading, setLoading] = useState(false)
     const {getToken}= useAuth()
@@ -41,6 +42,7 @@ export default function StoreAddProduct() {
            formData.append('mrp',productInfo.mrp)
            formData.append('price',productInfo.price)
            formData.append('category',productInfo.category)
+           formData.append('stock',productInfo.stock)
 
            // adding images to formdata
            Object.keys(images).forEach((key)=>{
@@ -56,6 +58,7 @@ setProductInfo({
         mrp: 0,
         price: 0,
         category: "",
+        stock: 0,
 })
           // reset images
           setImages({ 1: null, 2: null, 3: null, 4: null })
@@ -95,11 +98,15 @@ setProductInfo({
             <div className="flex gap-5">
                 <label htmlFor="" className="flex flex-col gap-2 ">
                     Actual Price ($)
-                    <input type="number" name="mrp" onChange={onChangeHandler} value={productInfo.mrp} placeholder="0" rows={5} className="w-full max-w-45 p-2 px-4 outline-none border border-slate-200 rounded resize-none" required />
+                    <input type="number" name="mrp" onChange={onChangeHandler} value={productInfo.mrp} placeholder="0" className="w-full max-w-45 p-2 px-4 outline-none border border-slate-200 rounded" required />
                 </label>
                 <label htmlFor="" className="flex flex-col gap-2 ">
                     Offer Price ($)
-                    <input type="number" name="price" onChange={onChangeHandler} value={productInfo.price} placeholder="0" rows={5} className="w-full max-w-45 p-2 px-4 outline-none border border-slate-200 rounded resize-none" required />
+                    <input type="number" name="price" onChange={onChangeHandler} value={productInfo.price} placeholder="0" className="w-full max-w-45 p-2 px-4 outline-none border border-slate-200 rounded" required />
+                </label>
+                <label htmlFor="" className="flex flex-col gap-2 ">
+                    Stock Quantity
+                    <input type="number" name="stock" onChange={onChangeHandler} value={productInfo.stock} placeholder="0" className="w-full max-w-45 p-2 px-4 outline-none border border-slate-200 rounded" required />
                 </label>
             </div>
 

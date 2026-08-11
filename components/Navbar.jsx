@@ -39,6 +39,7 @@ const Navbar = () => {
                     <div className="hidden sm:flex items-center gap-4 lg:gap-8 text-slate-600">
                         <Link href="/">Home</Link>
                         <Link href="/shop">Shop</Link>
+                        {user && <Link href="/orders">My Orders</Link>}
 
                         <form onSubmit={handleSearch} className="hidden xl:flex items-center w-xs text-sm gap-2 bg-slate-100 px-4 py-3 rounded-full">
                             <Search size={18} className="text-slate-600" />
@@ -58,8 +59,7 @@ const Navbar = () => {
                             ) : (
                                 <UserButton>
                                     <UserButton.MenuItems>
-                                        <UserButton.Action labelIcon={<PackageIcon size=
-                                            {16} />} label="My Orders" onClick={() => router.push('/orders')} />
+                                        <UserButton.Action labelIcon={<PackageIcon size={16} />} label="My Orders" onClick={() => router.push('/orders')} />
                                     </UserButton.MenuItems>
                                 </UserButton>
                             )
@@ -74,14 +74,8 @@ const Navbar = () => {
                             <div>
                                 <UserButton>
                                     <UserButton.MenuItems>
-                                        <UserButton.Action labelIcon={<ShoppingCart size=
-                                            {16} />} label="Cart" onClick={() => router.push('/cart')} />
-                                    </UserButton.MenuItems>
-                                </UserButton>
-                                <UserButton>
-                                    <UserButton.MenuItems>
-                                        <UserButton.Action labelIcon={<PackageIcon size=
-                                            {16} />} label="My Orders" onClick={() => router.push('/orders')} />
+                                        <UserButton.Action labelIcon={<ShoppingCart size={16} />} label="Cart" onClick={() => router.push('/cart')} />
+                                        <UserButton.Action labelIcon={<PackageIcon size={16} />} label="My Orders" onClick={() => router.push('/orders')} />
                                     </UserButton.MenuItems>
                                 </UserButton>
                             </div>

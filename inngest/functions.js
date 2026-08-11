@@ -68,3 +68,51 @@ export const syncUserCreation = inngest.createFunction(
             })
         }
     )
+
+    export const handleOrderTimeout = inngest.createFunction(
+        { id: 'handle-order-timeout' },
+        { event: 'order/payment.timeout' },
+        async ({ event, step }) => {
+            const { orderIds } = event.data
+            
+            // Wait 35 minutes to ensure Stripe/Khalti session expires
+            await step.sleep('wait-for-payment', '35m')
+            
+            await step.run('check-and-restore-stock', async () => {
+                const unpaidOrders = await prisma.order.findMany({
+                    where: {
+                        id: { in: orderIds },
+                        isPaid: false
+                    },
+                    include: {
+                        orderItems: true
+                    }
+                })
+                
+                if (unpaidOrders.length > 0) {
+                    for (const order of unpaidOrders) {
+                        for (const item of order.orderItems) {
+                            const product = await prisma.product.findUnique({
+                                where: { id: item.productId }
+                            })
+                            if (product) {
+                                const newStock = product.stock + item.quantity
+                                await prisma.product.update({
+                                    where: { id: product.id },
+                                    data: {
+                                        stock: newStock,
+                                        inStock: true
+                                    }
+                                })
+                            }
+                        }
+                        
+                        // Delete unpaid order
+                        await prisma.order.delete({
+                            where: { id: order.id }
+                        })
+                    }
+                }
+            })
+        }
+    )

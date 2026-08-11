@@ -76,6 +76,11 @@ export default function Cart() {
                                                 <p className="max-sm:text-sm">{item.name}</p>
                                                 <p className="text-xs text-slate-500">{item.category}</p>
                                                 <p>{currency}{item.price}</p>
+                                                {(!item.inStock || item.stock === 0) ? (
+                                                    <span className="text-red-500 text-xs font-semibold block mt-0.5">Out of Stock</span>
+                                                ) : item.stock < item.quantity ? (
+                                                    <span className="text-amber-600 text-xs font-semibold block mt-0.5">Insufficient Stock (Only {item.stock} left)</span>
+                                                ) : null}
                                             </div>
                                         </td>
                                         <td className="text-center">
